@@ -17,6 +17,9 @@ import com.woozoom.data.WayPoint;
 
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
+import org.osmdroid.events.MapListener;
+import org.osmdroid.events.ScrollEvent;
+import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.tileprovider.MapTileProviderArray;
 import org.osmdroid.tileprovider.modules.MapTileFileArchiveProvider;
 import org.osmdroid.tileprovider.modules.MapTileFilesystemProvider;
@@ -102,6 +105,17 @@ public class MapActivity extends Activity  implements View.OnClickListener {
             @Override
             public void onViewDetachedFromWindow(View view) {
 
+            }
+        });
+        mMapView.setMapListener(new MapListener() {
+            @Override
+            public boolean onScroll(ScrollEvent event) {
+                return false;
+            }
+
+            @Override
+            public boolean onZoom(ZoomEvent event) {
+                return false;
             }
         });
         mController.setZoom(15);
