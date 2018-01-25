@@ -1,12 +1,17 @@
 package osmdroidmaptest.osmdroidmaptest;
 
 import android.app.Activity;
-import android.graphics.Paint;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.woozoom.data.WayPoint;
 
@@ -19,12 +24,13 @@ import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
-import org.osmdroid.views.overlay.Overlay;
-import org.osmdroid.views.overlay.PathOverlay;
+import org.osmdroid.views.overlay.Polygon;
 import org.osmdroid.views.overlay.Polyline;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static android.view.View.MeasureSpec.UNSPECIFIED;
 
 /**
  * @name: MapActivity
@@ -73,46 +79,77 @@ public class MapActivity extends Activity  implements View.OnClickListener {
         points.add(new GeoPoint(41.6727430415, 123.4377314542));
         points.add(new GeoPoint(41.6748053700, 123.4570324500));
 
+        /**
+         * 画线
+         */
         Polyline line = new Polyline();
         line.setWidth(5);
         line.setColor(0xFF1B7BCD);
         line.setPoints(points);
-        mMapView.getOverlays().add(line);
+//        mMapView.getOverlays().add(line);
+        Polygon polygon = new Polygon();
+        polygon.setStrokeWidth(1);
+        polygon.setFillColor(0x8032B5EB);
+        polygon.setStrokeColor(Color.BLUE);
+        polygon.setPoints(points);
+        mMapView.getOverlays().add(polygon);
+        mController.setZoom(15);
         mController.setCenter(points.get(0));
-        Marker marker = new Marker(mMapView);
-        marker.setIcon(getResources().getDrawable(R.mipmap.ic_launcher));//设置图标
-        marker.setPosition(new WayPoint(41.6748053700, 123.4570324500));//设置位置
-        marker.setAnchor(0.5f, 0.5f);//设置偏移量
-        marker.setTitle("我是Titile");//设置标题
-        marker.setSubDescription("我是SubDescription");//设置说明
-//        mMapView.getOverlays().add(marker);//添加marker到MapView
+        for (int i = 0; i <points.size() ; i++) {
+            GeoPoint geoPoint=points.get(i);
+            Marker marker = new Marker(mMapView);
+            marker.setIcon(LayoutToDrawable(i));//设置图标
+            marker.setPosition(geoPoint);//设置位置
+            marker.setAnchor(0.5f, 1f);//设置偏移量
+            marker.setOnMarkerClickListener(null);
+            mMapView.getOverlays().add(marker);//添加marker到MapView
+        }
+
     }
     private IMapController mController;
     private SimpleRegisterReceiver mRegisterReceiver;
     private MapTileFilesystemProvider fileSystemProvider;
     private MapTileFileArchiveProvider fileArchiveProvider;
     private GoogleTileSource mGoogleTileSource;
-    /**
-     * 添加实线区域
-     */
-    private Overlay addFullArea(List<GeoPoint> pointList, int color) {
-        PathOverlay myPath = new PathOverlay(color, this);
-        Paint paint = new Paint();
-        paint.reset();
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(3);
-        paint.setColor(color);
-//        paint.setAntiAlias(true);
-        paint.setPathEffect(null);
+    public Drawable LayoutToDrawable(int num ){
 
-        myPath.setPaint(paint);
-        for (GeoPoint geoPoint : pointList) {
-            myPath.addPoint(geoPoint);
-        }
-        mMapView.setLayerType(View.LAYER_TYPE_SOFTWARE, paint);//关闭硬件加速(绘制轨迹时需要)
-        mMapView.getOverlays().add(myPath);
-        mMapView.invalidate();
-        return myPath;
+        LayoutInflater inflator = getLayoutInflater();
+        View viewHelp = inflator.inflate( R.layout.marker, null);
+        TextView indexView = viewHelp.findViewById(R.id.indexTextView);
+        indexView.setText(""+(num+1));
+        Bitmap snapshot = convertViewToBitmap(viewHelp);
+        Drawable drawable = (Drawable)new BitmapDrawable(snapshot);
+
+        return drawable;
+
+    }
+    /**
+     * 创建View 生成 Bitmap
+     *
+     * @param view
+     * @return
+     */
+    public Bitmap convertViewToBitmap(View view) {
+        view.measure(View.MeasureSpec.makeMeasureSpec(0, UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, UNSPECIFIED));
+        view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
+        Log.d(TAG, "convertViewToBitmap: drawCircle "+view.getMeasuredWidth()+"  view.getMeasuredHeight() "+view.getMeasuredHeight());
+        view.buildDrawingCache();
+        Bitmap bitmap = view.getDrawingCache();
+        return bitmap;
+    }
+    /**
+     * 创建View 生成 Bitmap
+     *
+     * @param view
+     * @return
+     */
+    public Bitmap convertViewToBitmap(View view,int width,int height ) {
+        view.measure(View.MeasureSpec.makeMeasureSpec(0, UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, UNSPECIFIED));
+        view.layout(0, 0, width, height);
+        Log.d(TAG, "convertViewToBitmap: drawCircle "+width+"  view.getMeasuredHeight() "+width);
+        view.buildDrawingCache();
+        Bitmap bitmap = view.getDrawingCache();
+        return bitmap;
     }
     @Override
     public void onClick(View v) {
