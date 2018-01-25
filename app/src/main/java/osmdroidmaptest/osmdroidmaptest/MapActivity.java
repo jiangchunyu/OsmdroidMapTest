@@ -93,6 +93,17 @@ public class MapActivity extends Activity  implements View.OnClickListener {
         polygon.setStrokeColor(Color.BLUE);
         polygon.setPoints(points);
         mMapView.getOverlays().add(polygon);
+        mMapView.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+            @Override
+            public void onViewAttachedToWindow(View view) {
+
+            }
+
+            @Override
+            public void onViewDetachedFromWindow(View view) {
+
+            }
+        });
         mController.setZoom(15);
         mController.setCenter(points.get(0));
         for (int i = 0; i <points.size() ; i++) {
