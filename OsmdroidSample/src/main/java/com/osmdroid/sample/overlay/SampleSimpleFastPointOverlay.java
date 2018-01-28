@@ -53,7 +53,7 @@ public class SampleSimpleFastPointOverlay extends BaseSampleFragment {
         // set some visual options for the overlay
         // we use here MAXIMUM_OPTIMIZATION algorithm, which works well with >100k points
         SimpleFastPointOverlayOptions opt = SimpleFastPointOverlayOptions.getDefaultStyle()
-                .setAlgorithm(SimpleFastPointOverlayOptions.RenderingAlgorithm.MAXIMUM_OPTIMIZATION)
+                .setSymbol(SimpleFastPointOverlayOptions.Shape.CIRCLE)
                 .setRadius(7).setIsClickable(true).setCellSize(15).setTextStyle(textStyle);
 
         // create the overlay with the theme
