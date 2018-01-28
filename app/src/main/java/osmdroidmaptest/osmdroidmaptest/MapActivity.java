@@ -1,6 +1,7 @@
 package osmdroidmaptest.osmdroidmaptest;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -11,7 +12,6 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,8 +23,13 @@ import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.MapTileProviderArray;
+import org.osmdroid.tileprovider.modules.MapTileDownloader;
 import org.osmdroid.tileprovider.modules.MapTileFileArchiveProvider;
 import org.osmdroid.tileprovider.modules.MapTileFilesystemProvider;
+import org.osmdroid.tileprovider.modules.MapTileModuleProviderBase;
+import org.osmdroid.tileprovider.modules.NetworkAvailabliltyCheck;
+import org.osmdroid.tileprovider.modules.TileWriter;
+import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.TileSystem;
@@ -38,6 +43,7 @@ import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions;
 import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static android.view.View.MeasureSpec.UNSPECIFIED;
@@ -49,17 +55,21 @@ import static android.view.View.MeasureSpec.UNSPECIFIED;
  * @date: 2018-01-25 11:45
  * @comment:
  */
-public class MapActivity extends Activity implements View.OnClickListener {
+public class MapActivity extends Activity {
     private MapView mMapView;
     private static final String TAG = "MapActivity";
+    private boolean normalMap = true;
+    private TextView text;
+    private ArrayList<GeoPoint> mBounderList = new ArrayList<>();
+    private ArrayList<GeoPoint> mRoundObsList = new ArrayList<>();
+    private HashMap<Float, List<WayPoint>> mPolygonalObsMap = new HashMap<>();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.map_activity);
         mMapView = findViewById(R.id.mymapview);
-        Button button = findViewById(R.id.button1);
-        button.setOnClickListener(this);
+        text = findViewById(R.id.text);
         initMap();
     }
 
@@ -69,10 +79,9 @@ public class MapActivity extends Activity implements View.OnClickListener {
         mMapView = (MapView) findViewById(R.id.mymapview);
         mMapView.setMultiTouchControls(true);
         mMapView.setPressed(true);
-        mGoogleTileSource = new GoogleTileSource();
-        mMapView.setTileSource(mGoogleTileSource);
-//        mapView.getTileProvider().clearTileCache();
+        setTileProviderArray(this,new GoogleSatelliteTileSource());
         Configuration.getInstance().setTileDownloadThreads((short) 40);
+        text.setText("卫星地图");
         Log.d(TAG, "initMap: DownloadThreads  " + Configuration.getInstance().getTileDownloadThreads());
         mMapView.setTilesScaledToDpi(true);//重要
 //        mMapView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);//关闭硬件加速(绘制轨迹时需要)
@@ -81,23 +90,23 @@ public class MapActivity extends Activity implements View.OnClickListener {
 
 
         //PathOverlay 路线Overlay
-        List<GeoPoint> points = new ArrayList<>();
-        points.add(new GeoPoint(41.6748053700, 123.4570324500));
-        points.add(new GeoPoint(41.6723055956, 123.4734351099));
-        points.add(new GeoPoint(41.6673048423, 123.4724051417));
-        points.add(new GeoPoint(41.6656187682, 123.4655171166));
-        points.add(new GeoPoint(41.6675872651, 123.4556250174));
-        points.add(new GeoPoint(41.6694915981, 123.4483078389));
-        points.add(new GeoPoint(41.6727430415, 123.4377314542));
-        points.add(new GeoPoint(41.6748053700, 123.4570324500));
 
+
+        //
+        mBounderList.add(new WayPoint(41.6884315164,123.4377993391));
+        mBounderList.add(new WayPoint(41.6881204655,123.4394270182));
+        mBounderList.add(new WayPoint(41.6876757958,123.4387832880));
+        mBounderList.add(new WayPoint(41.6876076930,123.4382039309));
+        mBounderList.add(new WayPoint(41.6877198623,123.4375816584));
+        mBounderList.add(new WayPoint(41.6879602245,123.4365248680));
+        mBounderList.add(new WayPoint(41.6882486579,123.4354734421));
         /**
          * 画线
          */
         Polyline line = new Polyline();
         line.setWidth(5);
         line.setColor(0xFF1B7BCD);
-        line.setPoints(points);
+        line.setPoints(mBounderList);
         line.setOnClickListener(new Polyline.OnClickListener() {
             @Override
             public boolean onClick(Polyline polyline, MapView mapView, GeoPoint eventPos) {
@@ -110,11 +119,11 @@ public class MapActivity extends Activity implements View.OnClickListener {
         polygon.setStrokeWidth(1);
         polygon.setFillColor(0x8032B5EB);
         polygon.setStrokeColor(Color.BLUE);
-        polygon.setPoints(points);
+        polygon.setPoints(mBounderList);
         mMapView.getOverlays().add(polygon);
 
-        for (int i = 0; i < points.size(); i++) {
-            GeoPoint geoPoint = points.get(i);
+        for (int i = 0; i < mBounderList.size(); i++) {
+            GeoPoint geoPoint = mBounderList.get(i);
             Marker marker = new Marker(mMapView);
             marker.setIcon(LayoutToDrawable(i));//设置图标
             marker.setPosition(geoPoint);//设置位置
@@ -123,31 +132,91 @@ public class MapActivity extends Activity implements View.OnClickListener {
             mMapView.getOverlays().add(marker);//添加marker到MapView
         }
 
-        GeoPoint roundPoint = new GeoPoint(41.6816406362,123.4479239608);
-        double t1=TileSystem.GroundResolution(roundPoint.getLatitude(),
+        GeoPoint roundPoint = new GeoPoint(41.6816406362, 123.4479239608);
+        double t1 = TileSystem.GroundResolution(roundPoint.getLatitude(),
                 mMapView.getZoomLevel());
-        double t2= TilesMapTileProvider.GroundResolution(roundPoint.getLatitude(),
+        double t2 = TilesMapTileProvider.GroundResolution(roundPoint.getLatitude(),
                 mMapView.getZoomLevel());
-        float mRadius= 5;
-        mMapView.getOverlays().add(new CustomPointOverlay(roundPoint,mRadius));
+        float mRadius = 5;
+        mMapView.getOverlays().add(new CustomPointOverlay(roundPoint, mRadius));
         testRound();
         mController.setZoom(18);
-        mController.setCenter(roundPoint);
+        mController.setCenter(mBounderList.get(0));
         Marker marker = new Marker(mMapView);
         LayoutInflater inflator = getLayoutInflater();
         View viewHelp = inflator.inflate(R.layout.marker_hinder, null);
-        Drawable drawable = (Drawable) new BitmapDrawable(convertViewToBitmap(viewHelp, 100,100));
+        Drawable drawable = (Drawable) new BitmapDrawable(convertViewToBitmap(viewHelp, 100, 100));
         marker.setIcon(drawable);//设置图标
         marker.setPosition(roundPoint);//设置位置
-       // setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
+        // setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);//设置偏移量
         marker.setOnMarkerClickListener(null);
         mMapView.getOverlays().add(marker);//添加marker到MapView
+        createUav();
     }
+
+
+    private void  createUav(){
+        UavCreateUtils uavCreateUtils  = new UavCreateUtils();
+        ArrayList<WayPoint> bounderList = new ArrayList<>();
+        ArrayList<WayPoint> roundObsList = new ArrayList<>();
+        HashMap<Float, List<WayPoint>> polygonalObsMap = new HashMap<>();
+        WayPoint wayPoint = new WayPoint(41.6880683872,123.4373134375);
+        wayPoint.setRadius(5d);
+//        roundObsList.add(wayPoint);
+        mMapView.getOverlays().add(new CustomPointOverlay(wayPoint, 5));
+        for (int i = 0; i < mBounderList.size(); i++) {
+            bounderList.add((WayPoint) mBounderList.get(i));
+        }
+        Log.e(TAG, "createUav: bounderList "+bounderList);
+        Log.e(TAG, "createUav: roundObsList "+roundObsList);
+        uavCreateUtils.setOnOutputUavLine(new UavCreateUtils.OnOutputUavLine() {
+            @Override
+            public void onFailed(int wpCnt) {
+                Log.e(TAG, "onFailed: wpCnt "+wpCnt);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                Log.e(TAG, "onFailed: wpCnt "+e);
+            }
+
+            @Override
+            public void onOntput(ArrayList<WayPoint> uavList) {
+                ArrayList<GeoPoint> uavGeoList = new ArrayList<>();
+                for (WayPoint wayPoint :
+                        uavList) {
+                    uavGeoList.add(wayPoint);
+                }
+                Log.e(TAG, "onOntput: uavList "+uavList);
+                Polyline line = new Polyline();
+                line.setWidth(3);
+                line.setColor(Color.WHITE);
+                line.setPoints(uavGeoList);
+                mMapView.getOverlays().add(line);
+
+                Polyline line2 = new Polyline();
+                line2.setWidth(5);
+                line2.setColor(0xFF1B7BCD);
+                line2.setPoints(mBounderList);
+                line2.setOnClickListener(new Polyline.OnClickListener() {
+                    @Override
+                    public boolean onClick(Polyline polyline, MapView mapView, GeoPoint eventPos) {
+                        Log.d(TAG, "onClick: polyline " + polyline + "   eventPos " + eventPos.getLatitude() + "," + eventPos.getLongitude());
+                        return false;
+                    }
+                });
+//                mMapView.getOverlays().add(line2);
+
+            }
+        });
+        uavCreateUtils.createUav(0,0,5, bounderList,roundObsList,polygonalObsMap);
+    }
+
 
     private void testRound() {
         // wrap them in a theme
-        GeoPoint roundPoint = new GeoPoint(41.6691710349,123.4462479024);
+        GeoPoint roundPoint = new GeoPoint(41.6691710349, 123.4462479024);
 
         List<IGeoPoint> points = new ArrayList<>();
         points.add(roundPoint);
@@ -184,10 +253,6 @@ public class MapActivity extends Activity implements View.OnClickListener {
 
 
     private IMapController mController;
-    private SimpleRegisterReceiver mRegisterReceiver;
-    private MapTileFilesystemProvider fileSystemProvider;
-    private MapTileFileArchiveProvider fileArchiveProvider;
-    private GoogleTileSource mGoogleTileSource;
 
     public Drawable LayoutToDrawable(int num) {
 
@@ -232,16 +297,64 @@ public class MapActivity extends Activity implements View.OnClickListener {
         return bitmap;
     }
 
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.button1:
-                //定位当前的位置，并设置缩放级别
-                mMapView.getController().setZoom(19);
-                mMapView.getController().setCenter(new WayPoint(41.6748053700, 123.4570324500));
-                break;
-            default:
-                break;
-        }
+    public void onClickLocal(View v) {
+        //定位当前的位置，并设置缩放级别
+        GeoPoint geoPoint = new GeoPoint(41.68600799127257, 123.43166780934118);
+        Marker marker = new Marker(mMapView);
+        marker.setIcon(getResources().getDrawable(R.drawable.bounder_point));//设置图标
+        marker.setPosition(geoPoint);//设置位置
+        marker.setAnchor(0.5f, 1f);//设置偏移量
+        marker.setOnMarkerClickListener(null);
+        mMapView.getOverlays().add(marker);//添加marker到MapView
+        mMapView.getController().setZoom(18);
+        mMapView.getController().setCenter(geoPoint);
+    }
+
+    public void onClickChangeLocal(View v) {
+        //定位当前的位置，并设置缩放级别
+        GeoPoint geoPoint = new GeoPoint(41.68842522475527, 123.43778637349602);
+        Marker marker = new Marker(mMapView);
+        marker.setIcon(getResources().getDrawable(R.drawable.bounder_start_point));//设置图标
+        marker.setPosition(geoPoint);//设置位置
+        marker.setAnchor(0.5f, 1f);//设置偏移量
+        marker.setOnMarkerClickListener(null);
+        mMapView.getOverlays().add(marker);//添加marker到MapView
+        mMapView.getController().setZoom(18);
+        mMapView.getController().setCenter(geoPoint);
+    }
+
+    public void onClickNarmol(View v) {
+        text.setText("普通地图");
+        normalMap = true;
+        setTileProviderArray(this,new GoogleTileSource());
+    }
+
+    public void onClickSatellite(View v) {
+        text.setText("卫星地图");
+        normalMap = false;
+        setTileProviderArray(this,new GoogleSatelliteTileSource());
+    }
+
+
+    private void setTileProviderArray(Context context,XYTileSource xyTileSource){
+        //指定地图加载提供器
+        SimpleRegisterReceiver   mRegisterReceiver = new SimpleRegisterReceiver(context);
+
+        final TileWriter tileWriter = new TileWriter();
+        MapTileFilesystemProvider   mTileFilesystemProvider = new MapTileFilesystemProvider(mRegisterReceiver, xyTileSource);
+
+        // Create an archive file modular tile provider
+        MapTileFileArchiveProvider  fileArchiveProvider = new MapTileFileArchiveProvider(mRegisterReceiver, xyTileSource/*, findArchiveFiles()*/);
+
+        // Create a download modular tile provider
+        final NetworkAvailabliltyCheck networkAvailabliltyCheck = new NetworkAvailabliltyCheck(context);
+        final MapTileDownloader downloaderProvider = new MapTileDownloader(xyTileSource, tileWriter, networkAvailabliltyCheck);
+        // Create a custom tile provider array with the custom tile source and  the custom tile providers
+        MapTileProviderArray  mMapTileProviderArray = new MapTileProviderArray(xyTileSource, mRegisterReceiver, new MapTileModuleProviderBase[]{mTileFilesystemProvider, fileArchiveProvider, downloaderProvider});
+//        mMapTileProviderArray = new MapTileProviderArray(xyTileSource, mRegisterReceiver, new MapTileModuleProviderBase[]{downloaderProvider});
+        mMapView.getTileProvider().clearTileCache();
+//      Log.d("tag", "清理tile缓存........");
+        mMapView.setTileProvider(mMapTileProviderArray);
+        mMapView.setTileSource(xyTileSource);
     }
 }
