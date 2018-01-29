@@ -1,6 +1,5 @@
 package com.woozoom.view;
 
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -20,17 +19,14 @@ public class CustomPointOverlay extends Overlay {
     private final Point mMapCoordsProjected = new Point();
     private final Point mMapCoordsTranslated = new Point();
     protected Paint mCirclePaint = new Paint();
-    GeoPoint mGeoPoint;
-    Bitmap  mBitmap;
-    float mR;
+    private GeoPoint mGeoPoint;
+    private float mRadius;
 
-
-
-    public CustomPointOverlay(GeoPoint geoPoint,Bitmap bitmap,float r ) {
-        mBitmap=bitmap;
-        mR=r;
-        mGeoPoint=geoPoint;
+    public CustomPointOverlay(GeoPoint mGeoPoint,float radius) {
+        this.mGeoPoint=mGeoPoint;
+        this.mRadius=radius;
     }
+
 
 
     @Override
@@ -41,14 +37,11 @@ public class CustomPointOverlay extends Overlay {
         Projection pj = mapView.getProjection();
         pj.toPixelsFromProjected(mMapCoordsProjected, mMapCoordsTranslated);
 
-           final float radius = mR
-                    / (float) TileSystem.GroundResolution(mGeoPoint.getLatitude(),
-                    mapView.getZoomLevel());
-
-        mCirclePaint.setColor(Color.BLUE);
+        final float radius = mRadius/(float) TileSystem.GroundResolution(mGeoPoint.getLatitude(),
+                mapView.getZoomLevel());
+//       final float radius = 10L;
+        mCirclePaint.setColor(Color.RED);
         mCirclePaint.setStyle(Paint.Style.FILL);
-
-        canvas.drawBitmap(mBitmap, mMapCoordsTranslated.x, mMapCoordsTranslated.y,mCirclePaint);
         canvas.drawCircle(mMapCoordsTranslated.x, mMapCoordsTranslated.y, radius, mCirclePaint);
     }
 }

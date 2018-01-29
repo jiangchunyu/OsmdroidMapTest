@@ -1,21 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
+    <LinearLayout
+        android:id="@+id/ll_root"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal">
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:onClick="onClickLocal"
+
+            android:text="定位"/>
+
+        <View
+            android:layout_width="20dp"
+            android:layout_height="match_parent"/>
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:onClick="onClickChangeLocal"
+            android:text="定位（转换）"/>
+
+        <View
+            android:layout_width="20dp"
+            android:layout_height="match_parent"/>
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:onClick="onClickSatellite"
+            android:text="卫星"/>
+
+        <View
+            android:layout_width="20dp"
+            android:layout_height="match_parent"/>
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:onClick="onClickNarmol"
+            android:text="普通"/>
+    </LinearLayout>
 
     <org.osmdroid.views.MapView
         android:id="@+id/mymapview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/button1"></org.osmdroid.views.MapView>
+        android:layout_above="@id/ll_root"></org.osmdroid.views.MapView>
 
-    <Button
-        android:id="@+id/button1"
-        android:text="定位"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_alignParentBottom="true" />
+    <TextView
+        android:id="@+id/text"
+        android:padding="10dp"
+        android:background="@android:color/white"
+        android:textColor="@android:color/black"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""/>
 </RelativeLayout>

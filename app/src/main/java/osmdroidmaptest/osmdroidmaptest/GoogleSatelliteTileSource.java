@@ -10,7 +10,7 @@ import org.osmdroid.tileprovider.tilesource.XYTileSource;
  * @author: Jiangcy
  * @datetime: 2018/1/23
  */
-public class GoogleTileSource extends XYTileSource {
+public class GoogleSatelliteTileSource extends XYTileSource {
     //影像的叠加层 lyrs=h
     static final String[] baseUrl_GoogleLabel = new String[]{
             "http://mt1.google.cn/vt/imgtp=png32&lyrs=h@210000000&hl=en-US&gl=US&src=app&s=G",
@@ -34,8 +34,9 @@ public class GoogleTileSource extends XYTileSource {
             "http://mt3.google.cn/vt/lyrs=y@126&hl=zh-CN&gl=cn&src=app&s=G"
     };
 
+
     //影像底图 lyrs=y  有标注  在国内但有偏移，国外暂无测试
-    static final String[] base_map_roadurl = new String[]{"http://mt0.google.cn/vt/lyrm=y&gl=CN"};
+    static final String[] base_map_satellite = new String[]{"http://mt0.google.cn/vt/lyrs=y&gl=CN"};
 
 
     public static final String GOOGLE_MAP_SATELLITE_URL =  "http://mt2.google.cn/vt/lyrs=y&gl=CN&x=%d&y=%d&z=%d";//卫星地图
@@ -50,8 +51,8 @@ public class GoogleTileSource extends XYTileSource {
 
     String urlXYZ = "&x={$x}&y={$y}&z={$z}";
 
-    public GoogleTileSource() {
-        super("Google", 3, 19, 256, "png", base_map_roadurl);
+    public GoogleSatelliteTileSource() {
+        super("GoogleSatellite", 3, 19, 256, "jpg", base_map_satellite);
     }
 
     @Override
