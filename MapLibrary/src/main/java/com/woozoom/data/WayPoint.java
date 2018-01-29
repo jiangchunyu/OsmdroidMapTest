@@ -12,6 +12,8 @@ import org.osmdroid.util.GeoPoint;
  * @comment:
  */
 public class WayPoint extends GeoPoint {
+    private Double radius = 5.0;
+    public short pstate;//航迹点时为state
     public WayPoint(int aLatitudeE6, int aLongitudeE6) {
         super(aLatitudeE6, aLongitudeE6);
     }
@@ -34,5 +36,13 @@ public class WayPoint extends GeoPoint {
 
     public WayPoint(GeoPoint aGeopoint) {
         super(aGeopoint);
+    }
+
+    public Double getRadius() {
+        return radius;
+    }
+
+    public void setRadius(Double radius) {
+        this.radius = radius;
     }
 }

@@ -12,7 +12,7 @@ import org.osmdroid.views.Projection;
 import org.osmdroid.views.overlay.Overlay;
 
 /**
- * ×Ô¶¨Òå»æÖÆµÄµØÍ¼×ø±ê
+ * è‡ªå®šä¹‰ç»˜åˆ¶çš„åœ°å›¾åæ ‡
  */
 public class CustomPointOverlay extends Overlay {
 
@@ -32,7 +32,7 @@ public class CustomPointOverlay extends Overlay {
     @Override
     public void draw(Canvas canvas, MapView mapView, boolean shadow) {
 
-        //¾­Î³¶È×ø±êµ½ÆÁÄ»×ø±êµÄ×ª»»
+        //ç»çº¬åº¦åæ ‡åˆ°å±å¹•åæ ‡çš„è½¬æ¢
         mapView.getProjection().toProjectedPixels(mGeoPoint.getLatitude(), mGeoPoint.getLongitude(), mMapCoordsProjected);
         Projection pj = mapView.getProjection();
         pj.toPixelsFromProjected(mMapCoordsProjected, mMapCoordsTranslated);

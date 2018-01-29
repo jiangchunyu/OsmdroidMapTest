@@ -1,1 +1,1 @@
-include ':app', ':MapLibrary', ':OsmdroidSample'
+include ':app', ':MapLibrary', ':OsmdroidSample',  ':UavLineLibrary'
