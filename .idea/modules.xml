@@ -5,7 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/MapLibrary/MapLibrary.iml" filepath="$PROJECT_DIR$/MapLibrary/MapLibrary.iml" />
       <module fileurl="file://$PROJECT_DIR$/OsmdroidMapTest.iml" filepath="$PROJECT_DIR$/OsmdroidMapTest.iml" />
       <module fileurl="file://$PROJECT_DIR$/OsmdroidSample/OsmdroidSample.iml" filepath="$PROJECT_DIR$/OsmdroidSample/OsmdroidSample.iml" />
-      <module fileurl="file://$PROJECT_DIR$/UavLineLibrary/UavLineLibrary.iml" filepath="$PROJECT_DIR$/UavLineLibrary/UavLineLibrary.iml" />
+      <module fileurl="file://E:\JCYWorkSpace\Map\OsmdroidMapTest\UavLineLibrary\UavLineLibrary.iml" filepath="E:\JCYWorkSpace\Map\OsmdroidMapTest\UavLineLibrary\UavLineLibrary.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

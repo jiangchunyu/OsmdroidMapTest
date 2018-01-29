@@ -9,6 +9,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,8 +18,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.woozoom.data.WayPoint;
-import com.woozoom.view.CustomPointOverlay;
 import com.woozoom.view.CustomPolygon;
+import com.woozoom.view.CustomScaleBarOverlay;
 import com.woozoom.view.TilesMapTileProvider;
 
 import org.osmdroid.api.IGeoPoint;
@@ -37,6 +38,7 @@ import org.osmdroid.tileprovider.util.StorageUtils;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.TileSystem;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.Projection;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.Polyline;
@@ -115,11 +117,21 @@ public class MapActivity extends Activity {
         line.setOnClickListener(new Polyline.OnClickListener() {
             @Override
             public boolean onClick(Polyline polyline, MapView mapView, GeoPoint eventPos) {
-                Log.d(TAG, "onClick: polyline " + polyline + "   eventPos " + eventPos.getLatitude() + "," + eventPos.getLongitude());
+                Log.d(TAG, "onClick: polyline "
+                        + polyline + "   eventPos "
+                        + eventPos.getLatitude() + ","
+                        + eventPos.getLongitude());
                 return false;
             }
         });
+        double mGroundResolution = TileSystem.GroundResolution(mBounderList.get(0).getLatitude(),
+                mMapView.getZoomLevel());
+        Log.d(TAG, "drawLatitudeText: line.getNumberOfPoints() "
+                + line.getNumberOfPoints() + "  mBounderList "
+                + mBounderList.size() + "  mGroundResolution "
+                + mGroundResolution);
         mMapView.getOverlays().add(line);
+        mMapView.computeScroll();
         CustomPolygon polygon = new CustomPolygon();
         polygon.setStrokeWidth(1);
         polygon.tag = "地块边界";
@@ -175,10 +187,32 @@ public class MapActivity extends Activity {
         mMapView.getOverlays().add(markerTest);//添加marker到MapView
         mOverlayTest = markerTest;
         //createUav();
+        final DisplayMetrics dm = getResources().getDisplayMetrics();
+        CustomScaleBarOverlay mScaleBarOverlay = new CustomScaleBarOverlay(mMapView);
+        mScaleBarOverlay.setCentred(true);
+        mScaleBarOverlay.setAlignBottom(true); //底部显示
+        mScaleBarOverlay.setScaleBarOffset(0, 80);
+        mMapView.getOverlays().add(mScaleBarOverlay);
     }
 
     private void getCenter(List<GeoPoint> points) {
         if (points.size() > 0) {
+            int minLatitude = Integer.MAX_VALUE;
+            int maxLatitude = Integer.MIN_VALUE;
+            int minLongitude = Integer.MAX_VALUE;
+            int maxLongitude = Integer.MIN_VALUE;
+
+// Find the boundaries of the item set
+// item contains a list of GeoPoints
+            for (GeoPoint item : points) {
+                int lat = item.getLatitudeE6();
+                int lon = item.getLongitudeE6();
+
+                maxLatitude = Math.max(lat, maxLatitude);
+                minLatitude = Math.min(lat, minLatitude);
+                maxLongitude = Math.max(lon, maxLongitude);
+                minLongitude = Math.min(lon, minLongitude);
+            }
             double maxLng = points.get(0).getLongitude();
             double minLng = points.get(0).getLongitude();
             double maxLat = points.get(0).getLatitude();
@@ -202,91 +236,53 @@ public class MapActivity extends Activity {
 
 
             }
-
+            GeoPoint p1 = new GeoPoint(maxLat,maxLng);
+            GeoPoint p2 = new GeoPoint(minLat,minLng);
+            Log.d(TAG, "getCenter  distanceTo :  "+(p1.distanceTo(p2)));
+            ;
             double cenLng = ((maxLng) + (minLng)) / 2;
             double cenLat = ((maxLat) + (minLat)) / 2;
-            int zoom = getZoom(maxLng, minLng, maxLat, minLat);
+            // int zoom = getZoom(maxLng, minLng, maxLat, minLat);
         }
     }
 
-    //根据经纬极值计算绽放级别。
-    public int  getZoom(double maxLng,double  minLng,double  maxLat,double  minLat) {
+    private float maxLength;
+    private boolean adjustLength = false;
+    private void test(Context context){
+        final DisplayMetrics dm = context.getResources().getDisplayMetrics();
+        float xdpi = dm.xdpi;
+        float ydpi = dm.ydpi;
 
-      //  var pointA = new BMap.Point(maxLng, maxLat);  // 创建点坐标A
-       // var pointB = new BMap.Point(minLng, minLat);  // 创建点坐标B
-        //var distance = map.getDistance(pointA, pointB).toFixed(1);  //获取两点距离,保留小数点后两位
-        double distance = getSquaredDistanceToPoint(maxLat,maxLng,minLat,minLng);
-        for (var i = 0, zoomLen = zoom.length; i < zoomLen; i++) {
-            if (zoom[i] - distance > 0) {
-                return 18 - i + 3;//之所以会多3，是因为地图范围常常是比例尺距离的10倍以上。所以级别会增加3。
-            }
-        }
-        ;
+        int screenWidth = dm.widthPixels;
+        int screenHeight = dm.heightPixels;
+        maxLength = 2.54f;
+        final Projection projection = mMapView.getProjection();
+        // calculate dots per centimeter
+        int xdpcm = (int) ((float) xdpi / 2.54);
+
+        // get length in pixel
+        int xLen = (int) (maxLength * xdpcm);
+
+        // Two points, xLen apart, at scale bar screen location
+        IGeoPoint p1 = projection.fromPixels((screenWidth / 2) - (xLen / 2), yOffset, null);
+        IGeoPoint p2 = projection.fromPixels((screenWidth / 2) + (xLen / 2), yOffset, null);
+
+        // get distance in meters between points
+        final int xMeters = ((GeoPoint) p1).distanceTo(p2);
+        // get adjusted distance, shortened to the next lower number starting with 1, 2 or 5
+        final double xMetersAdjusted = this.adjustLength ? adjustScaleBarLength(xMeters) : xMeters;
+        // get adjusted length in pixels
+        final int xBarLengthPixels = (int) (xLen * xMetersAdjusted / xMeters);
     }
+
     public double getSquaredDistanceToPoint(
             final double pFromX, final double pFromY, final double pToX, final double pToY) {
         final double dX = pFromX - pToX;
         final double dY = pFromY - pToY;
         return dX * dX + dY * dY;
     }
+
     Overlay mOverlayTest;
-
-    private void createUav() {
-        UavCreateUtils uavCreateUtils = new UavCreateUtils();
-        ArrayList<WayPoint> bounderList = new ArrayList<>();
-        ArrayList<WayPoint> roundObsList = new ArrayList<>();
-        HashMap<Float, List<WayPoint>> polygonalObsMap = new HashMap<>();
-        WayPoint wayPoint = new WayPoint(41.7083516272, 123.4398801647);
-        wayPoint.setRadius(5d);
-//        roundObsList.add(wayPoint);
-        mMapView.getOverlays().add(new CustomPointOverlay(wayPoint, 5));
-        for (int i = 0; i < mBounderList.size(); i++) {
-            bounderList.add((WayPoint) mBounderList.get(i));
-        }
-        Log.e(TAG, "createUav: bounderList " + bounderList);
-        Log.e(TAG, "createUav: roundObsList " + roundObsList);
-        uavCreateUtils.setOnOutputUavLine(new UavCreateUtils.OnOutputUavLine() {
-            @Override
-            public void onFailed(int wpCnt) {
-                Log.e(TAG, "onFailed: wpCnt " + wpCnt);
-            }
-
-            @Override
-            public void onError(Exception e) {
-                Log.e(TAG, "onFailed: wpCnt " + e);
-            }
-
-            @Override
-            public void onOntput(ArrayList<WayPoint> uavList) {
-                ArrayList<GeoPoint> uavGeoList = new ArrayList<>();
-                for (WayPoint wayPoint :
-                        uavList) {
-                    uavGeoList.add(wayPoint);
-                }
-                Log.e(TAG, "onOntput: uavList " + uavList);
-                Polyline line = new Polyline();
-                line.setWidth(3);
-                line.setColor(Color.WHITE);
-                line.setPoints(uavGeoList);
-                mMapView.getOverlays().add(line);
-
-                Polyline line2 = new Polyline();
-                line2.setWidth(5);
-                line2.setColor(0xFF1B7BCD);
-                line2.setPoints(mBounderList);
-                line2.setOnClickListener(new Polyline.OnClickListener() {
-                    @Override
-                    public boolean onClick(Polyline polyline, MapView mapView, GeoPoint eventPos) {
-                        Log.d(TAG, "onClick: polyline " + polyline + "   eventPos " + eventPos.getLatitude() + "," + eventPos.getLongitude());
-                        return false;
-                    }
-                });
-//                mMapView.getOverlays().add(line2);
-
-            }
-        });
-        uavCreateUtils.createUav(0, 0, 5, bounderList, roundObsList, polygonalObsMap);
-    }
 
 
     private void testRound() {
