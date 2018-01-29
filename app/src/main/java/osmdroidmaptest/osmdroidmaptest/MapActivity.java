@@ -2,6 +2,7 @@ package osmdroidmaptest.osmdroidmaptest;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -14,6 +15,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.woozoom.data.WayPoint;
+import com.woozoom.view.CustomPointOverlay;
 
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
@@ -119,6 +121,7 @@ public class MapActivity extends Activity  implements View.OnClickListener {
             }
         });
         mController.setZoom(15);
+        com.woozoom.map.GoogleTileSource
         mController.setCenter(points.get(0));
         for (int i = 0; i <points.size() ; i++) {
             GeoPoint geoPoint=points.get(i);
@@ -127,9 +130,12 @@ public class MapActivity extends Activity  implements View.OnClickListener {
             marker.setPosition(geoPoint);//设置位置
             marker.setAnchor(0.5f, 1f);//设置偏移量
             marker.setOnMarkerClickListener(null);
-            mMapView.getOverlays().add(marker);//添加marker到MapView
+            //mMapView.getOverlays().add(marker);//添加marker到MapView
         }
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.hinder);
 
+        CustomPointOverlay customPointOverlay=new CustomPointOverlay(new GeoPoint(41.6748053700, 123.457032450),bitmap,10);
+        mMapView.getOverlays().add(customPointOverlay);
     }
     private IMapController mController;
     private SimpleRegisterReceiver mRegisterReceiver;
