@@ -429,7 +429,7 @@ public class CustomScaleBarOverlay  extends Overlay implements GeoConstants {
         // create text
         final String xMsg = scaleBarLengthText((int) xMetersAdjusted);
         Log.d("jiangcy", "drawLatitudeText: xMsg "+xMsg+"  xMetersAdjusted "
-                +xMetersAdjusted+"  xMeters : " +xMeters+"   screenWidth : "+screenWidth);
+                +xMetersAdjusted+"  xMeters : " +xMeters+"   screenWidth : "+screenWidth+"   ZoomLevel "+mMapView.getZoomLevel());
         textPaint.getTextBounds(xMsg, 0, xMsg.length(), sTextBoundsRect);
         final int xTextSpacing = (int) (sTextBoundsRect.height() / 5.0);
 

@@ -67,7 +67,7 @@
     <org.osmdroid.views.MapView
         android:id="@+id/mymapview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="200dp"
         android:layout_above="@id/ll_root"></org.osmdroid.views.MapView>
 
     <TextView

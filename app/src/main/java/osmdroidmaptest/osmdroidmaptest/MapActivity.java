@@ -13,6 +13,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,10 +36,10 @@ import org.osmdroid.tileprovider.modules.TileWriter;
 import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.tileprovider.util.StorageUtils;
+import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.TileSystem;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.Projection;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.Polyline;
@@ -76,14 +77,13 @@ public class MapActivity extends Activity {
         setContentView(R.layout.map_activity);
         mMapView = findViewById(R.id.mymapview);
         text = findViewById(R.id.text);
-        initMap();
+//        initMap();
+        testZoom();
     }
 
     private MapTileProviderArray tileProviderArray;
+    private void testZoom(){
 
-    public void initMap() {
-
-        mMapView = (MapView) findViewById(R.id.mymapview);
         mMapView.setMultiTouchControls(true);
 //        mMapView.setPressed(true);
         setTileProviderArray(this, new GoogleSatelliteTileSource());
@@ -100,13 +100,97 @@ public class MapActivity extends Activity {
 
 
         //
-        mBounderList.add(new WayPoint(41.7093367905, 123.4431846462));
-        mBounderList.add(new WayPoint(41.7108024932, 123.4397728763));
-        mBounderList.add(new WayPoint(41.7101937901, 123.4381420932));
-        mBounderList.add(new WayPoint(41.7094569313, 123.4377343975));
-        mBounderList.add(new WayPoint(41.7073344103, 123.4382922969));
-        mBounderList.add(new WayPoint(41.7069098977, 123.4392149768));
-        mBounderList.add(new WayPoint(41.7070140237, 123.4421332202));
+        mBounderList.add(new WayPoint(41.70762997488147,123.43969051875696));
+        mBounderList.add(new WayPoint(41.706177433009415,123.44079810313046));
+        //mBounderList.add(new WayPoint( 41.706691098464105,123.4396903864115));
+//        mBounderList.add(new WayPoint(41.7094569313, 123.4377343975));
+//        mBounderList.add(new WayPoint(41.7073344103, 123.4382922969));
+//        mBounderList.add(new WayPoint(41.7069098977, 123.4392149768));
+//        mBounderList.add(new WayPoint(41.7070140237, 123.4421332202));
+        /**
+         * 画线
+         */
+        Polyline line = new Polyline();
+        line.setWidth(5);
+        line.setTitle("测试");
+        line.setColor(0xFF1B7BCD);
+        line.setPoints(mBounderList);
+        line.setOnClickListener(new Polyline.OnClickListener() {
+            @Override
+            public boolean onClick(Polyline polyline, MapView mapView, GeoPoint eventPos) {
+                Log.d(TAG, "onClick: polyline "
+                        + polyline + "   eventPos "
+                        + eventPos.getLatitude() + ","
+                        + eventPos.getLongitude());
+                return false;
+            }
+        });
+        double mGroundResolution = TileSystem.GroundResolution(mBounderList.get(0).getLatitude(),
+                mMapView.getZoomLevel());
+        Log.d(TAG, "drawLatitudeText: line.getNumberOfPoints() "
+                + line.getNumberOfPoints() + "  mBounderList "
+                + mBounderList.size() + "  mGroundResolution "
+                + mGroundResolution);
+        mMapView.getOverlays().add(line);
+        mMapView.computeScroll();
+        CustomPolygon polygon = new CustomPolygon();
+        polygon.setStrokeWidth(1);
+        polygon.tag = "地块边界";
+        polygon.setFillColor(0x8032B5EB);
+        polygon.setStrokeColor(Color.BLUE);
+        polygon.setPoints(mBounderList);
+        mMapView.getOverlays().add(polygon);
+
+        ArrayList<GeoPoint> testGeos = new ArrayList<>();
+        testGeos.add(new GeoPoint(41.7092727153, 123.4419615589));
+        testGeos.add(new GeoPoint(41.7093768374, 123.4403415046));
+        testGeos.add(new GeoPoint(41.7086079313, 123.4410603366));
+        CustomPolygon pbsPolygon = new CustomPolygon();
+        pbsPolygon.tag = "多边形障碍物";
+        pbsPolygon.setStrokeWidth(1);
+        pbsPolygon.setFillColor(0x98FF404A);
+        pbsPolygon.setStrokeColor(0xFFFF404D);
+        pbsPolygon.setPoints(testGeos);
+        mMapView.getOverlays().add(pbsPolygon);
+        for (int i = 0; i < mBounderList.size(); i++) {
+            GeoPoint geoPoint = mBounderList.get(i);
+            Marker marker = new Marker(mMapView);
+            marker.setIcon(LayoutToDrawable(i));//设置图标
+            marker.setPosition(geoPoint);//设置位置
+            marker.setAnchor(0.5f, 1f);//设置偏移量
+            marker.setOnMarkerClickListener(null);
+            mMapView.getOverlays().add(marker);//添加marker到MapView
+        }
+
+        onClickShowAllMarker(null);
+    }
+
+    public void initMap() {
+
+
+        mMapView.setMultiTouchControls(true);
+//        mMapView.setPressed(true);
+        setTileProviderArray(this, new GoogleSatelliteTileSource());
+        Configuration.getInstance().setTileDownloadThreads((short) 40);
+        text.setText("卫星地图");
+        Log.d(TAG, "initMap: DownloadThreads  " + Configuration.getInstance().getTileDownloadThreads());
+        mMapView.setTilesScaledToDpi(true);//重要
+//        mMapView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);//关闭硬件加速(绘制轨迹时需要)
+        //定位当前的位置，并设置缩放级别
+        mController = mMapView.getController();
+        mController.setZoom(mMapView.getTileProvider().getMinimumZoomLevel());
+        Log.d(TAG, "initMap: mMapView.getTileProvider().getMinimumZoomLevel() " + mMapView.getTileProvider().getMinimumZoomLevel());
+        //PathOverlay 路线Overlay
+
+
+        //
+        mBounderList.add(new WayPoint(41.70762997488147,123.43969051875696));
+        mBounderList.add(new WayPoint(41.706177433009415,123.44079810313046));
+        mBounderList.add(new WayPoint( 41.706691098464105,123.4396903864115));
+//        mBounderList.add(new WayPoint(41.7094569313, 123.4377343975));
+//        mBounderList.add(new WayPoint(41.7073344103, 123.4382922969));
+//        mBounderList.add(new WayPoint(41.7069098977, 123.4392149768));
+//        mBounderList.add(new WayPoint(41.7070140237, 123.4421332202));
         /**
          * 画线
          */
@@ -139,7 +223,7 @@ public class MapActivity extends Activity {
         polygon.setStrokeColor(Color.BLUE);
         polygon.setPoints(mBounderList);
         mMapView.getOverlays().add(polygon);
-        getCenter(mBounderList);
+
         ArrayList<GeoPoint> testGeos = new ArrayList<>();
         testGeos.add(new GeoPoint(41.7092727153, 123.4419615589));
         testGeos.add(new GeoPoint(41.7093768374, 123.4403415046));
@@ -193,87 +277,75 @@ public class MapActivity extends Activity {
         mScaleBarOverlay.setAlignBottom(true); //底部显示
         mScaleBarOverlay.setScaleBarOffset(0, 80);
         mMapView.getOverlays().add(mScaleBarOverlay);
+        onClickShowAllMarker(null);
     }
 
-    private void getCenter(List<GeoPoint> points) {
-        if (points.size() > 0) {
-            int minLatitude = Integer.MAX_VALUE;
-            int maxLatitude = Integer.MIN_VALUE;
-            int minLongitude = Integer.MAX_VALUE;
-            int maxLongitude = Integer.MIN_VALUE;
 
-// Find the boundaries of the item set
-// item contains a list of GeoPoints
-            for (GeoPoint item : points) {
-                int lat = item.getLatitudeE6();
-                int lon = item.getLongitudeE6();
+    public void onClickShowAllMarker(View v){
+        // Here i get my differents points
+        showAllPoint(mBounderList);
+    }
 
-                maxLatitude = Math.max(lat, maxLatitude);
-                minLatitude = Math.min(lat, minLatitude);
-                maxLongitude = Math.max(lon, maxLongitude);
-                minLongitude = Math.min(lon, minLongitude);
-            }
-            double maxLng = points.get(0).getLongitude();
-            double minLng = points.get(0).getLongitude();
-            double maxLat = points.get(0).getLatitude();
-            double minLat = points.get(0).getLatitude();
-
-            for (int i = 0; i < points.size(); i++) {
-                GeoPoint point = points.get(i);
-                if (point.getLongitude() > maxLng) {
-                    maxLng = point.getLongitude();
-                }
-                if (point.getLatitude() > maxLat) {
-                    maxLat = point.getLatitude();
-                }
-
-                if (point.getLongitude() < minLng) {
-                    minLng = point.getLongitude();
-                }
-                if (point.getLatitude() < minLat) {
-                    minLat = point.getLatitude();
-                }
-
-
-            }
-            GeoPoint p1 = new GeoPoint(maxLat,maxLng);
-            GeoPoint p2 = new GeoPoint(minLat,minLng);
-            Log.d(TAG, "getCenter  distanceTo :  "+(p1.distanceTo(p2)));
-            ;
-            double cenLng = ((maxLng) + (minLng)) / 2;
-            double cenLat = ((maxLat) + (minLat)) / 2;
-            // int zoom = getZoom(maxLng, minLng, maxLat, minLat);
+    public boolean showAllPoint(final List<GeoPoint> points){
+        if(points==null||points.size()<=0){
+            return false;
         }
+        if (mMapView.getWidth() > 0) {
+            autoZoom(points);
+        } else {
+            mMapView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    mMapView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    autoZoom(points);
+                }
+            });
+        }
+        return true;
     }
+
+    /**
+     * 自动缩放对应级别
+     * @param points
+     * @return
+     */
+    private void  autoZoom(List<GeoPoint> points){
+
+        double maxLng = points.get(0).getLongitude();
+        double minLng = points.get(0).getLongitude();
+        double maxLat = points.get(0).getLatitude();
+        double minLat = points.get(0).getLatitude();
+
+        for (int i = 0; i < points.size(); i++) {
+            GeoPoint point = points.get(i);
+            if (point.getLongitude() > maxLng) {
+                maxLng = point.getLongitude();
+            }
+            if (point.getLatitude() > maxLat) {
+                maxLat = point.getLatitude();
+            }
+
+            if (point.getLongitude() < minLng) {
+                minLng = point.getLongitude();
+            }
+            if (point.getLatitude() < minLat) {
+                minLat = point.getLatitude();
+            }
+
+
+        }
+         ;
+        mController.setCenter(new GeoPoint((maxLat + minLat) / 2.0,
+                (maxLng + minLng) / 2.0));
+        BoundingBox boundingBox = new BoundingBox(maxLat, maxLng, minLat, minLng);
+        mMapView.zoomToBoundingBox(boundingBox,false);
+        mMapView.invalidate();
+
+    }
+
 
     private float maxLength;
     private boolean adjustLength = false;
-    private void test(Context context){
-        final DisplayMetrics dm = context.getResources().getDisplayMetrics();
-        float xdpi = dm.xdpi;
-        float ydpi = dm.ydpi;
-
-        int screenWidth = dm.widthPixels;
-        int screenHeight = dm.heightPixels;
-        maxLength = 2.54f;
-        final Projection projection = mMapView.getProjection();
-        // calculate dots per centimeter
-        int xdpcm = (int) ((float) xdpi / 2.54);
-
-        // get length in pixel
-        int xLen = (int) (maxLength * xdpcm);
-
-        // Two points, xLen apart, at scale bar screen location
-        IGeoPoint p1 = projection.fromPixels((screenWidth / 2) - (xLen / 2), yOffset, null);
-        IGeoPoint p2 = projection.fromPixels((screenWidth / 2) + (xLen / 2), yOffset, null);
-
-        // get distance in meters between points
-        final int xMeters = ((GeoPoint) p1).distanceTo(p2);
-        // get adjusted distance, shortened to the next lower number starting with 1, 2 or 5
-        final double xMetersAdjusted = this.adjustLength ? adjustScaleBarLength(xMeters) : xMeters;
-        // get adjusted length in pixels
-        final int xBarLengthPixels = (int) (xLen * xMetersAdjusted / xMeters);
-    }
 
     public double getSquaredDistanceToPoint(
             final double pFromX, final double pFromY, final double pToX, final double pToY) {
@@ -405,6 +477,7 @@ public class MapActivity extends Activity {
         if (!(mOverlayTest instanceof Marker)) {
             return;
         }
+        onClickShowAllMarker(null);
         GeoPoint point = new GeoPoint(41.7083749127, 123.4455674201);
         LayoutInflater inflator = getLayoutInflater();
         View viewHelp = inflator.inflate(R.layout.marker_hinder, null);
