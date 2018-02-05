@@ -21,6 +21,7 @@ import android.widget.Toast;
 import com.woozoom.data.WayPoint;
 import com.woozoom.view.CustomPolygon;
 import com.woozoom.view.CustomScaleBarOverlay;
+import com.woozoom.view.CustomTextOverlay;
 import com.woozoom.view.TilesMapTileProvider;
 
 import org.osmdroid.api.IGeoPoint;
@@ -102,6 +103,10 @@ public class MapActivity extends Activity {
         //
         mBounderList.add(new WayPoint(41.70762997488147,123.43969051875696));
         mBounderList.add(new WayPoint(41.706177433009415,123.44079810313046));
+        CustomTextOverlay customTextOverlay = new CustomTextOverlay(mMapView);
+        customTextOverlay.setFirstPoint(new WayPoint(41.70762997488147,123.43969051875696));
+        customTextOverlay.setTwoPoint(new WayPoint(41.706177433009415,123.44079810313046));
+        mMapView.getOverlays().add(customTextOverlay);
         //mBounderList.add(new WayPoint( 41.706691098464105,123.4396903864115));
 //        mBounderList.add(new WayPoint(41.7094569313, 123.4377343975));
 //        mBounderList.add(new WayPoint(41.7073344103, 123.4382922969));
@@ -138,8 +143,8 @@ public class MapActivity extends Activity {
         polygon.tag = "地块边界";
         polygon.setFillColor(0x8032B5EB);
         polygon.setStrokeColor(Color.BLUE);
-        polygon.setPoints(mBounderList);
-        mMapView.getOverlays().add(polygon);
+       // polygon.setPoints(mBounderList);
+      //  mMapView.getOverlays().add(polygon);
 
         ArrayList<GeoPoint> testGeos = new ArrayList<>();
         testGeos.add(new GeoPoint(41.7092727153, 123.4419615589));
@@ -161,10 +166,37 @@ public class MapActivity extends Activity {
             marker.setOnMarkerClickListener(null);
             mMapView.getOverlays().add(marker);//添加marker到MapView
         }
-
+        double angle=getAngle(mBounderList.get(0).getLatitude(),mBounderList.get(0).getLongitude(),mBounderList.get(1).getLatitude(),mBounderList.get(1).getLongitude());
+        GeoPoint centerPoint = new GeoPoint(Math.abs((mBounderList.get(0).getLatitude() + mBounderList.get(1).getLatitude()) / 2)
+                , Math.abs((mBounderList.get(0).getLongitude() + mBounderList.get(1).getLongitude()) / 2));
+        Marker arrow = new Marker(mMapView);
+        arrow.setIcon(getResources().getDrawable(R.drawable.arrow));//设置图标
+        arrow.setPosition(centerPoint);//设置位置
+        arrow.setRotation((float) angle);
+        arrow.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);//设置偏移量
+        arrow.setOnMarkerClickListener(null);
+        mMapView.getOverlays().add(arrow);//添加marker到MapView
         onClickShowAllMarker(null);
     }
+    /**
+     * @param lat_a 纬度1
+     * @param lng_a 经度1
+     * @param lat_b 纬度2
+     * @param lng_b 经度2
+     * @return
+     */
+    private double getAngle(double lat_a, double lng_a, double lat_b, double lng_b) {
 
+        double y = Math.sin(lng_b - lng_a) * Math.cos(lat_b);
+        double x = Math.cos(lat_a) * Math.sin(lat_b) - Math.sin(lat_a) * Math.cos(lat_b) * Math.cos(lng_b - lng_a);
+        double brng = Math.atan2(y, x);
+
+        brng = Math.toDegrees(brng);
+        if (brng < 0)
+            brng = brng + 360;
+        return brng;
+
+    }
     public void initMap() {
 
 
