@@ -172,7 +172,7 @@ public class MapActivity extends Activity {
         Marker arrow = new Marker(mMapView);
         arrow.setIcon(getResources().getDrawable(R.drawable.arrow));//设置图标
         arrow.setPosition(centerPoint);//设置位置
-        arrow.setRotation((float) angle);
+        arrow.setRotation((float) (mMapView.getMapOrientation()- angle));
         arrow.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);//设置偏移量
         arrow.setOnMarkerClickListener(null);
         mMapView.getOverlays().add(arrow);//添加marker到MapView
